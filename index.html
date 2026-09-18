@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEE Midsem Exam Timetable</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#16283D">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --paper:#FAFAF7;
+    --paper-panel:#FFFFFF;
+    --ink:#16283D;
+    --ink-soft:#3C4E62;
+    --blue:#2C5F8A;
+    --blue-dim:#B9CCDA;
+    --grid:#DCE3E8;
+    --steel:#7C8B93;
+    --orange:#E0590C;
+    --orange-dim:#F6D9C6;
+    --green:#2F7D5C;
+    --radius:2px;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --paper:#12181F;
+      --paper-panel:#182029;
+      --ink:#EDEFF2;
+      --ink-soft:#A9B6C2;
+      --blue:#7FB0DC;
+      --blue-dim:#2E4152;
+      --grid:#26313C;
+      --steel:#8996A2;
+      --orange:#F0803E;
+      --orange-dim:#3A2A1C;
+      --green:#5FBE93;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#12181F;
+    --paper-panel:#182029;
+    --ink:#EDEFF2;
+    --ink-soft:#A9B6C2;
+    --blue:#7FB0DC;
+    --blue-dim:#2E4152;
+    --grid:#26313C;
+    --steel:#8996A2;
+    --orange:#F0803E;
+    --orange-dim:#3A2A1C;
+    --green:#5FBE93;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0/100% 28px,
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0/28px 100%,
+      var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Mono', monospace;
+    min-height:100vh;
+    padding: 28px 16px 64px;
+  }
+
+  .wrap{ max-width:920px; margin:0 auto; }
+
+  /* header */
+  header{
+    display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between;
+    gap:16px; border-bottom:2px solid var(--ink); padding-bottom:18px; margin-bottom:24px;
+  }
+  .title-block h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:clamp(28px, 5vw, 40px);
+    line-height:1.05;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .title-block p{
+    margin:0; color:var(--steel); font-size:13px; max-width:46ch;
+  }
+  .dept-tag{
+    font-size:12px; color:var(--blue); border:1px solid var(--blue-dim);
+    padding:4px 10px; border-radius:20px; white-space:nowrap; letter-spacing:0.02em;
+  }
+
+  /* 3-dot menu */
+  .menu-wrap{ position:relative; }
+  .dots-btn{
+    width:36px; height:36px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; line-height:1;
+    background:var(--paper-panel);
+    border:1px solid var(--grid);
+    border-radius:50%;
+    color:var(--ink);
+    cursor:pointer;
+    padding:0;
+  }
+  .dots-btn:hover{ border-color:var(--blue-dim); }
+  .menu-dropdown{
+    position:absolute; top:44px; right:0;
+    min-width:240px;
+    background:var(--paper-panel);
+    border:1px solid var(--grid);
+    border-radius:var(--radius);
+    box-shadow:0 8px 24px rgba(0,0,0,0.18);
+    padding:6px;
+    display:none;
+    z-index:20;
+  }
+  .menu-dropdown.open{ display:block; }
+  .menu-item{
+    width:100%;
+    display:flex; align-items:flex-start; gap:10px;
+    text-align:left;
+    font-family:'IBM Plex Mono', monospace;
+    background:none; border:none;
+    padding:10px 10px;
+    border-radius:var(--radius);
+    cursor:pointer;
+    color:var(--ink);
+  }
+  .menu-item:hover{ background:var(--paper); }
+  .menu-item-static{ cursor:default; }
+  .menu-item-static:hover{ background:none; }
+  .menu-item-icon{
+    flex:0 0 auto;
+    width:20px; text-align:center;
+    color:var(--blue);
+    font-weight:700;
+  }
+  .menu-item-title{ display:block; font-size:13px; font-weight:600; }
+  .menu-item-sub{ display:block; font-size:11px; color:var(--steel); margin-top:2px; }
+
+  /* clock pill */
+  .clock-pill{
+    display:inline-flex; align-items:center; gap:8px;
+    border:1px solid var(--grid);
+    background:var(--paper-panel);
+    border-radius:20px;
+    padding:8px 16px;
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-bottom:20px;
+  }
+  .clock-dot{
+    width:8px; height:8px; border-radius:50%;
+    background:var(--green);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--green) 25%, transparent);
+  }
+  .clock-sep{ color:var(--steel); }
+  #clockTime{ font-weight:600; color:var(--ink); }
+
+  /* next exam highlight (inline tag on the timeline card) */
+
+  .exam-node.next-exam{
+    border-color:var(--orange);
+    box-shadow:0 0 0 1px var(--orange);
+  }
+  .exam-node.next-exam::before{
+    background:var(--orange); border-color:var(--orange);
+  }
+  .up-next-tag{
+    display:inline-block;
+    font-size:10px; font-weight:700; letter-spacing:0.05em;
+    color:var(--orange); background:var(--orange-dim);
+    padding:2px 8px; border-radius:10px;
+    margin-bottom:4px;
+  }
+
+  /* selector card */
+  .panel{
+    background:var(--paper-panel);
+    border:1px solid var(--grid);
+    border-radius:var(--radius);
+    padding:20px;
+    margin-bottom:24px;
+  }
+  .panel h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:15px; font-weight:600; margin:0 0 14px; color:var(--ink);
+  }
+  .selector-row{
+    display:flex; gap:12px; flex-wrap:wrap; align-items:center;
+  }
+  select, input[type="text"]{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14px;
+    padding:10px 12px;
+    border:1px solid var(--grid);
+    border-radius:var(--radius);
+    background:var(--paper);
+    color:var(--ink);
+    min-width:180px;
+  }
+  select:focus, input:focus, button:focus{
+    outline:2px solid var(--blue); outline-offset:1px;
+  }
+  .hint{ font-size:12px; color:var(--steel); margin-top:10px; }
+
+  /* summary strip */
+  .summary{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(120px,1fr));
+    gap:1px;
+    background:var(--grid);
+    border:1px solid var(--grid);
+    margin-bottom:24px;
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .summary .cell{
+    background:var(--paper-panel);
+    padding:14px 16px;
+  }
+  .summary .cell .num{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:24px; font-weight:700; color:var(--ink);
+    display:block;
+  }
+  .summary .cell .lbl{
+    font-size:11px; color:var(--steel); letter-spacing:0.02em;
+  }
+
+  /* schedule timeline */
+  .schedule{ position:relative; padding-left:26px; }
+  .schedule::before{
+    content:""; position:absolute; left:6px; top:6px; bottom:6px; width:2px;
+    background:var(--blue-dim);
+  }
+  .exam-node{
+    position:relative;
+    background:var(--paper-panel);
+    border:1px solid var(--grid);
+    border-radius:var(--radius);
+    padding:16px 18px;
+    margin-bottom:14px;
+  }
+  .exam-node::before{
+    content:""; position:absolute; left:-26px; top:22px;
+    width:11px; height:11px; border-radius:50%;
+    background:var(--paper); border:2px solid var(--blue);
+  }
+  .exam-node.today::before{ background:var(--orange); border-color:var(--orange); }
+  .exam-node .row1{
+    display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px;
+    margin-bottom:8px;
+  }
+  .course-code{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:19px; font-weight:600; color:var(--ink);
+    letter-spacing:0.01em;
+  }
+  .course-code .course-id{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px; font-weight:500; color:var(--steel);
+    letter-spacing:0;
+  }
+  .date-badge{
+    font-size:12px; color:var(--blue); font-weight:500;
+  }
+  .exam-node .row2{
+    display:flex; gap:18px; flex-wrap:wrap; font-size:12.5px; color:var(--ink-soft);
+  }
+  .exam-node .row2 span{ display:flex; gap:6px; align-items:center; }
+  .exam-node .row2 b{ color:var(--ink); font-weight:600; }
+  .day-label{
+    font-size:11px; color:var(--steel); margin-bottom:2px; letter-spacing:0.03em;
+  }
+
+  .empty{
+    text-align:center; padding:48px 20px; color:var(--steel); font-size:13px;
+  }
+
+  /* actions */
+  .actions{ display:flex; gap:10px; margin: 20px 0 8px; flex-wrap:wrap; }
+  button{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px; font-weight:500;
+    padding:11px 18px;
+    border-radius:var(--radius);
+    border:1px solid var(--ink);
+    background:var(--ink);
+    color:var(--paper);
+    cursor:pointer;
+  }
+  button.secondary{
+    background:transparent; color:var(--ink); border:1px solid var(--grid);
+  }
+  button:hover{ opacity:0.85; }
+  button:disabled{ opacity:0.4; cursor:not-allowed; }
+
+  footer{
+    margin-top:40px; padding-top:16px; border-top:1px solid var(--grid);
+    font-size:11px; color:var(--steel); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+
+  @media (max-width:480px){
+    .selector-row{ flex-direction:column; align-items:stretch; }
+    select, input[type="text"]{ min-width:0; width:100%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="title-block">
+      <h1>Exam Schedule</h1>
+      <p>Civil &amp; Environmental Engineering &mdash; Midsem Examinations, September 2026</p>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div class="dept-tag">DEPT. CEE</div>
+      <button id="themeToggleBtn" class="dots-btn" type="button" aria-label="Toggle dark mode" title="Toggle dark / light">&#9680;</button>
+      <div class="menu-wrap">
+        <button id="menuDotsBtn" class="dots-btn" type="button" aria-label="More options" aria-haspopup="true" aria-expanded="false">&#8942;</button>
+        <div id="menuDropdown" class="menu-dropdown" role="menu">
+          <button id="installMenuItem" class="menu-item" type="button" role="menuitem" style="display:none;">
+            <span class="menu-item-icon">&#8595;</span>
+            <span>
+              <span class="menu-item-title">Install app</span>
+              <span class="menu-item-sub">Add to home screen, use offline</span>
+            </span>
+          </button>
+          <div id="installedMenuItem" class="menu-item menu-item-static" style="display:none;">
+            <span class="menu-item-icon">&#10003;</span>
+            <span>
+              <span class="menu-item-title">App installed</span>
+              <span class="menu-item-sub">Running from your home screen</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="clock-pill" id="clockPill">
+    <span class="clock-dot"></span>
+    <span id="clockDay">&mdash;</span>
+    <span class="clock-sep">&middot;</span>
+    <span id="clockTime">&mdash;</span>
+  </div>
+
+  <div class="panel">
+    <h2>Select your roll number</h2>
+    <div class="selector-row">
+      <select id="rollSelect" aria-label="Select roll number"></select>
+      <button class="secondary" id="clearBtn" type="button">Clear selection</button>
+    </div>
+    <p class="hint" id="hintText">Your selection is saved on this device so it's here next time you open this page.</p>
+  </div>
+
+  <div id="summaryBox"></div>
+
+  <div id="scheduleBox"></div>
+
+  <div class="actions" id="actionsBox" style="display:none;">
+    <button id="downloadPdfBtn" type="button">Download PDF</button>
+    <button class="secondary" id="printBtn" type="button">Print</button>
+  </div>
+
+  <footer>
+    <span id="footerLeft">Civil &amp; Environmental Engineering &middot; 93 students on record</span>
+    <span>Times shown in Morning slot, 10:30 AM &ndash; 12:30 PM unless noted</span>
+  </footer>
+
+</div>
+
+<script>
+const EXAMS = [{"roll": "2501CE01", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE01", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2501CE01", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE01", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE01", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE02", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE02", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2501CE02", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE02", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE02", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE03", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE03", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2501CE03", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE03", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE03", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE04", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE04", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE04", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE04", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE04", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE05", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE05", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT101"}, {"roll": "2501CE05", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE05", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE05", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE06", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE06", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2501CE06", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE06", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE06", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE07", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE07", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT001"}, {"roll": "2501CE07", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE07", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE07", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE08", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE08", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE08", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE08", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE08", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE09", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE09", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE09", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE09", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE09", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE10", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "205"}, {"roll": "2501CE10", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT101"}, {"roll": "2501CE10", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE10", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE10", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE11", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE11", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2501CE11", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE11", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE11", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE12", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE12", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2501CE12", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE12", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE12", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE13", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE13", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT001"}, {"roll": "2501CE13", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE13", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE13", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE14", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE14", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "502"}, {"roll": "2501CE14", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE14", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE14", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE15", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE15", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE15", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE15", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE15", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE16", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "205"}, {"roll": "2501CE16", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE16", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE16", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE16", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE17", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE17", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "502"}, {"roll": "2501CE17", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE17", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE17", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE18", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE18", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "102"}, {"roll": "2501CE18", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE18", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE18", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE19", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE19", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2501CE19", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE19", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE19", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE20", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE20", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE20", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE20", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE20", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE21", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE21", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2501CE21", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE21", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE21", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE22", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE22", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "502"}, {"roll": "2501CE22", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE22", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE22", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE23", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE23", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE23", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE23", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE23", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE24", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE24", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE24", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE24", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE24", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE25", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE25", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE25", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE25", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE25", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE26", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE26", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE26", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE26", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE26", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE27", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE27", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "102"}, {"roll": "2501CE27", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE27", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE27", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE28", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE28", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "502"}, {"roll": "2501CE28", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE28", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE28", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE29", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE29", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT101"}, {"roll": "2501CE29", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE29", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE29", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE30", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE30", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT001"}, {"roll": "2501CE30", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE30", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE30", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE31", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE31", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "102"}, {"roll": "2501CE31", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE31", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE31", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE32", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE32", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE32", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE32", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE32", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE33", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE33", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT101"}, {"roll": "2501CE33", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE33", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE33", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE34", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE34", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "502"}, {"roll": "2501CE34", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE34", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE34", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE35", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE35", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE35", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE35", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE35", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE36", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE36", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE36", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE36", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE36", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE37", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "205"}, {"roll": "2501CE37", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT101"}, {"roll": "2501CE37", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE37", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE37", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE38", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE38", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "502"}, {"roll": "2501CE38", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE38", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE38", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE39", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE39", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT101"}, {"roll": "2501CE39", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE39", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE39", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE40", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE40", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2501CE40", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE40", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE40", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE41", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE41", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2501CE41", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE41", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE41", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE42", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE42", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE42", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE42", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE42", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE43", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE43", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "102"}, {"roll": "2501CE43", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE43", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE43", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE44", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE44", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE44", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE44", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE44", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE45", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE45", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2501CE45", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE45", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE45", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE46", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE46", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT101"}, {"roll": "2501CE46", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE46", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE46", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE47", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE47", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2501CE47", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE47", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE47", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE48", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE48", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "104"}, {"roll": "2501CE48", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE48", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE48", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE49", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE49", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "102"}, {"roll": "2501CE49", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE49", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE49", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE50", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE50", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT001"}, {"roll": "2501CE50", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE50", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE50", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE51", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE51", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE51", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE51", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE51", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE52", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE52", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE52", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE52", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE52", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE53", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "205"}, {"roll": "2501CE53", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT101"}, {"roll": "2501CE53", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE53", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE53", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE54", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE54", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE54", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE54", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE54", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE55", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE55", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE55", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE55", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE55", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE56", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE56", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE56", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE56", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE56", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE57", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE57", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "104"}, {"roll": "2501CE57", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE57", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE57", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE58", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "205"}, {"roll": "2501CE58", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT101"}, {"roll": "2501CE58", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE58", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE58", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE59", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "205"}, {"roll": "2501CE59", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE59", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE59", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE59", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE60", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE60", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2501CE60", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE60", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE60", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE61", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE61", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "102"}, {"roll": "2501CE61", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE61", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE61", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE62", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE62", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2501CE62", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE62", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE62", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE63", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE63", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT001"}, {"roll": "2501CE63", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE63", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE63", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE64", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "205"}, {"roll": "2501CE64", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT101"}, {"roll": "2501CE64", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE64", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE64", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE65", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE65", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2501CE65", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE65", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE65", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE66", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE66", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "104"}, {"roll": "2501CE66", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE66", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE66", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2501CE67", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE67", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE67", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE67", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE67", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE68", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE68", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "502"}, {"roll": "2501CE68", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE68", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2501CE68", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2501CE69", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2501CE69", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT101"}, {"roll": "2501CE69", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2501CE69", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2501CE69", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2502GT01", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502GT01", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502GT01", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502GT01", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502GT01", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502GT02", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2502GT02", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502GT02", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2502GT02", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502GT02", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2502GT03", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2502GT03", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502GT03", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2502GT03", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502GT03", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2502GT04", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2502GT04", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT001"}, {"roll": "2502GT04", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2502GT04", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2502GT04", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2502GT05", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2502GT05", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT001"}, {"roll": "2502GT05", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2502GT05", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502GT05", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2502GT06", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502GT06", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502GT06", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502GT06", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502GT06", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502GT08", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502GT08", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "502"}, {"roll": "2502GT08", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502GT08", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502GT08", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502GT09", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2502GT09", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT001"}, {"roll": "2502GT09", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2502GT09", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502GT09", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2502ST01", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST01", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2502ST01", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST01", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502ST01", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST02", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2502ST02", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502ST02", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2502ST02", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502ST02", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2502ST03", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2502ST03", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST03", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2502ST03", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502ST03", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2502ST04", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST04", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2502ST04", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST04", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502ST04", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST05", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST05", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502ST05", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST05", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502ST05", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST06", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST06", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502ST06", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST06", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502ST06", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST07", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2502ST07", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT001"}, {"roll": "2502ST07", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2502ST07", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502ST07", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2502ST08", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2502ST08", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "104"}, {"roll": "2502ST08", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2502ST08", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2502ST08", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2502ST09", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST09", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502ST09", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST09", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502ST09", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST10", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST10", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2502ST10", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2502ST10", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2502ST10", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2503CE01", "course": "HS2101", "date": "2026-09-20", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2503CE01", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2503CE01", "course": "HS2110", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2503CE01", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2503CE01", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2503CE01", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2503CE02", "course": "HS2101", "date": "2026-09-20", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2503CE02", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2503CE02", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2503CE02", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2503CE02", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2503CE02", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2503CE03", "course": "HS2101", "date": "2026-09-20", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2503CE03", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2503CE03", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "102"}, {"roll": "2503CE03", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2503CE03", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2503CE03", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "302"}, {"roll": "2503CE04", "course": "HS2101", "date": "2026-09-20", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2503CE04", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2503CE04", "course": "HS2112", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2503CE04", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2503CE04", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2503CE04", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2503CE05", "course": "HS2101", "date": "2026-09-20", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT003"}, {"roll": "2503CE05", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2503CE05", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "502"}, {"roll": "2503CE05", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2503CE05", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT103"}, {"roll": "2503CE05", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT102"}, {"roll": "2503CE06", "course": "HS2101", "date": "2026-09-20", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2503CE06", "course": "CE2101", "date": "2026-09-21", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "LT002"}, {"roll": "2503CE06", "course": "HS2111", "date": "2026-09-22", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "104"}, {"roll": "2503CE06", "course": "CE2102", "date": "2026-09-23", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}, {"roll": "2503CE06", "course": "CE2103", "date": "2026-09-25", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "301"}, {"roll": "2503CE06", "course": "CE2104", "date": "2026-09-26", "slot": "Morning", "time": "10:30 AM - 12:30 PM", "room": "101"}];
+
+const COURSE_NAMES = {
+  'CE2101': 'Geomatics Engineering',
+  'CE2102': 'Structural Mechanics',
+  'CE2103': 'Fluid Mechanics',
+  'CE2104': 'Geology for Engineers',
+  'HS2110': 'Language',
+  'HS2111': 'Sociology',
+  'HS2112': 'Demography'
+};
+
+const STORAGE_KEY = 'ce_exam_schedule_roll';
+
+// Build roll -> list of exams, sorted by date
+const byRoll = {};
+EXAMS.forEach(e => {
+  if(!byRoll[e.roll]) byRoll[e.roll] = [];
+  byRoll[e.roll].push(e);
+});
+const rolls = Object.keys(byRoll).sort();
+rolls.forEach(r => byRoll[r].sort((a,b) => a.date.localeCompare(b.date)));
+
+const rollSelect = document.getElementById('rollSelect');
+const summaryBox = document.getElementById('summaryBox');
+const scheduleBox = document.getElementById('scheduleBox');
+const actionsBox = document.getElementById('actionsBox');
+const hintText = document.getElementById('hintText');
+
+// populate dropdown
+const placeholder = document.createElement('option');
+placeholder.value = '';
+placeholder.textContent = '— choose a roll number —';
+rollSelect.appendChild(placeholder);
+rolls.forEach(r => {
+  const opt = document.createElement('option');
+  opt.value = r;
+  opt.textContent = r;
+  rollSelect.appendChild(opt);
+});
+
+function formatDate(iso){
+  const d = new Date(iso + 'T00:00:00');
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return {
+    day: days[d.getDay()],
+    full: `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`
+  };
+}
+
+// Parses a time range string like "10:30 AM - 12:30 PM" and returns {start, end} as Date
+// objects for the given ISO date, or null if it can't be parsed.
+function parseExamWindow(iso, timeStr){
+  if(!timeStr) return null;
+  const parts = timeStr.split('-').map(s => s.trim());
+  const parseOne = (t) => {
+    const m = t.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if(!m) return null;
+    let h = parseInt(m[1], 10);
+    const min = parseInt(m[2], 10);
+    const ap = m[3].toUpperCase();
+    if(ap === 'PM' && h !== 12) h += 12;
+    if(ap === 'AM' && h === 12) h = 0;
+    const d = new Date(iso + 'T00:00:00');
+    d.setHours(h, min, 0, 0);
+    return d;
+  };
+  const start = parseOne(parts[0]);
+  const end = parts[1] ? parseOne(parts[1]) : null;
+  if(!start) return null;
+  return { start, end };
+}
+
+function formatCountdown(ms){
+  if(ms < 0) return 'now';
+  const mins = Math.floor(ms / 60000);
+  const days = Math.floor(mins / 1440);
+  const hrs = Math.floor((mins % 1440) / 60);
+  const rem = mins % 60;
+  if(days > 0) return `${days} day${days>1?'s':''} ${hrs} hr`;
+  if(hrs > 0) return `${hrs} hr ${rem} min`;
+  return `${rem} min`;
+}
+
+function render(roll){
+  scheduleBox.innerHTML = '';
+  summaryBox.innerHTML = '';
+  actionsBox.style.display = 'none';
+
+  if(!roll || !byRoll[roll]){
+    scheduleBox.innerHTML = '<div class="empty">Select a roll number above to see your exam schedule.</div>';
+    return;
+  }
+
+  const list = byRoll[roll];
+  const now = new Date();
+
+  // find the next upcoming exam (or one currently in progress)
+  let nextIndex = -1;
+  for(let i = 0; i < list.length; i++){
+    const win = parseExamWindow(list[i].date, list[i].time);
+    if(!win) continue;
+    const endTime = win.end || new Date(win.start.getTime() + 2*60*60*1000);
+    if(endTime > now){ nextIndex = i; break; }
+  }
+
+  // summary
+  const firstDate = formatDate(list[0].date).full;
+  const lastDate = formatDate(list[list.length-1].date).full;
+  const rooms = [...new Set(list.map(e => e.room))].length;
+  summaryBox.innerHTML = `
+    <div class="summary">
+      <div class="cell"><span class="num">${list.length}</span><span class="lbl">EXAMS</span></div>
+      <div class="cell"><span class="num">${rooms}</span><span class="lbl">ROOMS ASSIGNED</span></div>
+      <div class="cell"><span class="num" style="font-size:15px;">${firstDate}</span><span class="lbl">FIRST EXAM</span></div>
+      <div class="cell"><span class="num" style="font-size:15px;">${lastDate}</span><span class="lbl">LAST EXAM</span></div>
+    </div>
+  `;
+
+  // next-exam highlight is shown inline in the timeline below (no separate top card)
+
+  const today = new Date().toISOString().slice(0,10);
+  const wrap = document.createElement('div');
+  wrap.className = 'schedule';
+  list.forEach((e, i) => {
+    const {day, full} = formatDate(e.date);
+    const node = document.createElement('div');
+    const isNext = i === nextIndex;
+    node.className = 'exam-node' + (e.date === today ? ' today' : '') + (isNext ? ' next-exam' : '');
+    const name = COURSE_NAMES[e.course];
+    node.innerHTML = `
+      ${isNext ? '<div class="up-next-tag">UP NEXT</div>' : ''}
+      <div class="day-label">${day}</div>
+      <div class="row1">
+        <span class="course-code">${name ? name : e.course}${name ? `<span class="course-id"> ${e.course}</span>` : ''}</span>
+        <span class="date-badge">${full}</span>
+      </div>
+      <div class="row2">
+        <span>&#9201; <b>${e.time}</b></span>
+        <span>&#9635; Room <b>${e.room}</b></span>
+      </div>
+    `;
+    wrap.appendChild(node);
+  });
+  scheduleBox.appendChild(wrap);
+  actionsBox.style.display = 'flex';
+}
+
+function loadSaved(){
+  try{
+    return localStorage.getItem(STORAGE_KEY) || '';
+  }catch(e){ return ''; }
+}
+function saveRoll(roll){
+  try{
+    if(roll){ localStorage.setItem(STORAGE_KEY, roll); }
+    else{ localStorage.removeItem(STORAGE_KEY); }
+  }catch(e){ /* storage unavailable, ignore */ }
+}
+
+rollSelect.addEventListener('change', () => {
+  saveRoll(rollSelect.value);
+  render(rollSelect.value);
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  rollSelect.value = '';
+  saveRoll('');
+  render('');
+});
+
+document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+document.getElementById('downloadPdfBtn').addEventListener('click', () => {
+  const roll = rollSelect.value;
+  if(!roll || !byRoll[roll]) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'pt', format:'a4' });
+  const list = byRoll[roll];
+
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(18);
+  doc.text('CEE Midsem Exam Timetable', 40, 50);
+
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(11);
+  doc.text(`Roll No: ${roll}`, 40, 72);
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 40, 88);
+
+  let y = 120;
+  doc.setFontSize(10);
+  doc.setFont('helvetica','bold');
+  doc.text('Date', 40, y);
+  doc.text('Course', 160, y);
+  doc.text('Time', 280, y);
+  doc.text('Room', 440, y);
+  y += 8;
+  doc.setLineWidth(0.5);
+  doc.line(40, y, 520, y);
+  y += 16;
+
+  doc.setFont('helvetica','normal');
+  list.forEach(e => {
+    const { day, full } = formatDate(e.date);
+    const name = COURSE_NAMES[e.course];
+    if(y > 760){ doc.addPage(); y = 50; }
+    doc.text(`${full}`, 40, y);
+    doc.text(`(${day})`, 40, y + 12);
+    doc.text(name ? name : e.course, 160, y);
+    if(name){ doc.setFontSize(8); doc.setTextColor(140); doc.text(e.course, 160, y + 12); doc.setFontSize(10); doc.setTextColor(0); }
+    doc.text(e.time, 280, y);
+    doc.text(e.room, 440, y);
+    y += 30;
+  });
+
+  doc.setFontSize(8);
+  doc.setTextColor(140);
+  doc.text('Times are in the Morning slot unless otherwise noted on the department notice board.', 40, 810);
+
+  doc.save(`CEE_Midsem_Timetable_${roll}.pdf`);
+});
+
+// --- theme toggle (light / dark) ---
+const THEME_KEY = 'ce_exam_schedule_theme';
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+
+function applyTheme(theme){
+  if(theme === 'light' || theme === 'dark'){
+    document.documentElement.setAttribute('data-theme', theme);
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+  themeToggleBtn.textContent = theme === 'light' ? '\u263D' : '\u2600';
+}
+
+function loadTheme(){
+  try{ return localStorage.getItem(THEME_KEY) || ''; }catch(e){ return ''; }
+}
+function saveTheme(theme){
+  try{ localStorage.setItem(THEME_KEY, theme); }catch(e){ /* ignore */ }
+}
+
+applyTheme(loadTheme());
+
+themeToggleBtn.addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme') ||
+    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  saveTheme(next);
+});
+
+// --- live clock ---
+const clockDay = document.getElementById('clockDay');
+const clockTime = document.getElementById('clockTime');
+const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+function updateClock(){
+  const now = new Date();
+  clockDay.textContent = DAY_NAMES[now.getDay()];
+  let h = now.getHours();
+  const m = now.getMinutes().toString().padStart(2,'0');
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if(h === 0) h = 12;
+  clockTime.textContent = `${h}:${m} ${ap}`;
+}
+updateClock();
+setInterval(updateClock, 1000 * 15);
+
+// Refresh the "up next" highlight periodically so it stays accurate as time passes.
+setInterval(() => {
+  if(rollSelect.value){ render(rollSelect.value); }
+}, 1000 * 60);
+
+// --- 3-dot menu ---
+const menuDotsBtn = document.getElementById('menuDotsBtn');
+const menuDropdown = document.getElementById('menuDropdown');
+
+menuDotsBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const isOpen = menuDropdown.classList.toggle('open');
+  menuDotsBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+});
+document.addEventListener('click', (e) => {
+  if(!menuDropdown.contains(e.target) && e.target !== menuDotsBtn){
+    menuDropdown.classList.remove('open');
+    menuDotsBtn.setAttribute('aria-expanded', 'false');
+  }
+});
+
+// --- PWA: offline support + install prompt ---
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+let deferredInstallPrompt = null;
+const installMenuItem = document.getElementById('installMenuItem');
+const installedMenuItem = document.getElementById('installedMenuItem');
+
+function showInstalledState(){
+  installMenuItem.style.display = 'none';
+  installedMenuItem.style.display = 'flex';
+}
+
+// Already running as an installed app?
+if(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true){
+  showInstalledState();
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  installMenuItem.style.display = 'flex';
+});
+
+installMenuItem.addEventListener('click', async () => {
+  if(!deferredInstallPrompt) return;
+  menuDropdown.classList.remove('open');
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+});
+
+window.addEventListener('appinstalled', () => {
+  showInstalledState();
+});
+
+// init
+const saved = loadSaved();
+if(saved && byRoll[saved]){
+  rollSelect.value = saved;
+  render(saved);
+} else {
+  render('');
+}
+</script>
+</body>
+</html>
