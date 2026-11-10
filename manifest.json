@@ -1,7 +1,7 @@
 {
-  "name": "CEE Midsem Exam Timetable",
-  "short_name": "CEE Midsem",
-  "description": "Civil & Environmental Engineering — midsem exam timetable, works offline",
+  "name": "CE Exam Schedule - Autumn 2026",
+  "short_name": "CE Schedule",
+  "description": "Civil Engineering — End-Semester exam schedule, works offline",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
