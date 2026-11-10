@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CE Exam Schedule &mdash; Autumn 2026 End-Semester</title>
+<title>CEE Endsem Exam Timetable</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#16283D">
 <link rel="icon" href="icon-192.png">
@@ -318,11 +318,11 @@
 
   <header>
     <div class="title-block">
-      <h1>Exam Schedule</h1>
-      <p>Civil Engineering &mdash; End-Semester Examinations, November 2026</p>
+      <h1>Endsem Timetable</h1>
+      <p>Civil &amp; Environmental Engineering &mdash; End-Semester Examinations, November 2026</p>
     </div>
     <div style="display:flex; align-items:center; gap:10px;">
-      <div class="dept-tag">DEPT. CE</div>
+      <div class="dept-tag">DEPT. CEE</div>
       <div class="dept-tag tag-warning">SEATING: TBA</div>
       <button id="themeToggleBtn" class="dots-btn" type="button" aria-label="Toggle dark mode" title="Toggle dark / light">&#9680;</button>
       <div class="menu-wrap">
@@ -373,7 +373,7 @@
   </div>
 
   <footer>
-    <span id="footerLeft">Civil Engineering &middot; 93 students on record</span>
+    <span id="footerLeft">Civil &amp; Environmental Engineering &middot; 93 students on record</span>
     <span>Morning slot: 9:30 AM &ndash; 12:30 PM &middot; Seating plan TBA</span>
   </footer>
 
@@ -567,7 +567,7 @@ document.getElementById('downloadPdfBtn').addEventListener('click', () => {
 
   doc.setFont('helvetica','bold');
   doc.setFontSize(18);
-  doc.text('Civil Engineering - End-Sem Exam Schedule (Nov 2026)', 40, 50);
+  doc.text('CEE Endsem Exam Timetable', 40, 50);
 
   doc.setFont('helvetica','normal');
   doc.setFontSize(11);
@@ -605,7 +605,7 @@ document.getElementById('downloadPdfBtn').addEventListener('click', () => {
   doc.setTextColor(140);
   doc.text('Times are in the Morning slot (9:30 AM - 12:30 PM). Seating plan TBA.', 40, 810);
 
-  doc.save(`CE_Endsem_Schedule_${roll}.pdf`);
+  doc.save(`CEE_Endsem_Timetable_${roll}.pdf`);
 });
 
 // --- theme toggle (light / dark) ---

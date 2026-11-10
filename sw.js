@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ce-endsem-timetable-v1';
+const CACHE_NAME = 'cee-endsem-timetable-v2';
 
 const PRECACHE_URLS = [
   './',
